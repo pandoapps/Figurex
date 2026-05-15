@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { CheckCircle, RefreshCw, Send, Wifi, WifiOff } from 'lucide-react';
 import DashboardHeader from '../../components/layout/DashboardHeader';
 import Spinner from '../../components/ui/Spinner';
 import { evolutionService, type ConnectionStatus } from '../../services/evolutionService';
+import { resolveErrorMessage } from '../../services/api';
+import { useToast } from '../../hooks/useToast';
 
 const STATE_LABEL: Record<string, string> = {
   open: 'Conectado',
@@ -19,23 +21,80 @@ const STATE_COLOR: Record<string, string> = {
 };
 
 export default function ConfigEvolution() {
+  const toast = useToast();
   const [status, setStatus] = useState<ConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [testNumber, setTestNumber] = useState('');
+  const [testMessage, setTestMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const load = useCallback(() => {
-    setLoading(true);
-    evolutionService
+  const fetchStatus = useCallback((showSpinner = false) => {
+    if (showSpinner) setLoading(true);
+    return evolutionService
       .connectionStatus()
-      .then(setStatus)
-      .catch(() => setStatus({ state: 'unknown', qrcode: null }))
-      .finally(() => setLoading(false));
+      .then((s) => {
+        setStatus(s);
+        return s;
+      })
+      .catch(() => {
+        const fallback: ConnectionStatus = { state: 'unknown', qrcode: null };
+        setStatus(fallback);
+        return fallback;
+      })
+      .finally(() => { if (showSpinner) setLoading(false); });
   }, []);
+
+  const stopPolling = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  const startPolling = useCallback(() => {
+    stopPolling();
+    intervalRef.current = setInterval(async () => {
+      const s = await fetchStatus();
+      if (s.state === 'open') stopPolling();
+    }, 2000);
+  }, [fetchStatus, stopPolling]);
+
+  const load = useCallback(async () => {
+    const s = await fetchStatus(true);
+    if (s.state !== 'open') startPolling();
+    else stopPolling();
+  }, [fetchStatus, startPolling, stopPolling]);
 
   useEffect(() => {
     load();
-  }, [load]);
+    return stopPolling;
+  }, [load, stopPolling]);
 
   const connected = status?.state === 'open';
+
+  const maskPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 2) return digits.length ? `(${digits}` : '';
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
+  const handleTestSend = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!testNumber.trim() || !testMessage.trim()) return;
+    setSending(true);
+    try {
+      await evolutionService.sendTestMessage(testNumber.trim(), testMessage.trim());
+      toast.success('Mensagem de teste enviada com sucesso.');
+      setTestMessage('');
+    } catch (error) {
+      toast.error(resolveErrorMessage(error));
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div>
@@ -64,7 +123,7 @@ export default function ConfigEvolution() {
           </div>
           <button
             type="button"
-            onClick={load}
+            onClick={() => load()}
             disabled={loading}
             className="p-2 glass hover:text-[#f5c518] transition-colors"
             aria-label="Atualizar status"
@@ -117,6 +176,46 @@ export default function ConfigEvolution() {
         )}
 
         {loading && <Spinner label="Verificando conexão..." />}
+
+        {/* Teste de envio */}
+        {!loading && connected && (
+          <div className="space-y-4 pt-2 border-t border-white/10">
+            <div>
+              <div className="text-xs font-bold text-[#b0bec5] uppercase tracking-wider mb-1">
+                Testar envio de mensagem
+              </div>
+              <p className="text-xs text-[#b0bec5]">
+                Envie uma mensagem de teste para qualquer número sem precisar de um colecionador cadastrado.
+              </p>
+            </div>
+            <form onSubmit={handleTestSend} className="space-y-3">
+              <input
+                type="tel"
+                className="input-field w-full"
+                placeholder="(11) 99999-9999"
+                value={testNumber}
+                onChange={(e) => setTestNumber(maskPhone(e.target.value))}
+                disabled={sending}
+              />
+              <textarea
+                className="input-field w-full resize-none"
+                rows={3}
+                placeholder="Digite a mensagem..."
+                value={testMessage}
+                onChange={(e) => setTestMessage(e.target.value)}
+                disabled={sending}
+              />
+              <button
+                type="submit"
+                disabled={sending || !testNumber.trim() || !testMessage.trim()}
+                className="btn-primary w-full py-3 flex items-center justify-center gap-2"
+              >
+                <Send size={14} />
+                {sending ? 'Enviando...' : 'Enviar mensagem de teste'}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

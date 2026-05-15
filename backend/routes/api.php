@@ -95,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/settings/{group}', [SettingController::class, 'update']);
 
         Route::get('/whatsapp/status', [EvolutionController::class, 'connectionStatus']);
+        Route::post('/whatsapp/test', [EvolutionController::class, 'sendTestMessage']);
         Route::get('/whatsapp/{user}/messages', [EvolutionController::class, 'getMessages']);
         Route::post('/whatsapp/{user}/send', [EvolutionController::class, 'sendMessage']);
     });

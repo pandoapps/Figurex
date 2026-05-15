@@ -35,4 +35,8 @@ export const evolutionService = {
   async sendMessage(userId: number, message: string): Promise<void> {
     await api.post(`/admin/whatsapp/${userId}/send`, { message });
   },
+
+  async sendTestMessage(number: string, message: string): Promise<void> {
+    await api.post('/admin/whatsapp/test', { number, message });
+  },
 };

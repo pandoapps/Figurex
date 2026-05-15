@@ -6,13 +6,13 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const ITEMS: SidebarItem[] = [
   { to: '/admin', label: 'Dashboard', icon: '📊', end: true },
-  { to: '/admin/usuarios', label: 'Gerenciar Colecionadores', icon: '👥' },
-  { to: '/admin/anuncios', label: 'Gerenciar Anúncios', icon: '📦' },
-  { to: '/admin/selecoes', label: 'Gerenciar Seleções', icon: '🏳️' },
+  { to: '/admin/usuarios', label: 'Colecionadores', icon: '👥' },
+  { to: '/admin/anuncios', label: 'Anúncios', icon: '📦' },
+  { to: '/admin/selecoes', label: 'Seleções', icon: '🏳️' },
   { to: '/admin/jogadores', label: 'Jogadores', icon: '⚽' },
-  { to: '/admin/asaas', label: 'Configurar Asaas', icon: '💳' },
-  { to: '/admin/fretenet', label: 'Configurar FreteNet', icon: '🚚' },
-  { to: '/admin/whatsapp', label: 'Configurar WhatsApp', icon: '💬' },
+  { to: '/admin/asaas', label: 'Asaas', icon: '💳' },
+  { to: '/admin/fretenet', label: 'FreteNet', icon: '🚚' },
+  { to: '/admin/whatsapp', label: 'WhatsApp', icon: '💬' },
   { to: '/admin/vendas', label: 'Histórico de Vendas', icon: '📈' },
 ];
 

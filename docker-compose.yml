@@ -12,6 +12,7 @@ services:
       - "3307:3306"
     volumes:
       - figurex_mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pfigurex"]
       interval: 10s
@@ -81,6 +82,16 @@ services:
       - /app/node_modules
     command: sh -c "npm install && npm run dev"
 
+  mongodb:
+    image: mongo:6
+    container_name: figurex_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - figurex_mongodb_data:/data/db
+
   evolution:
     image: atendai/evolution-api:v1.8.7
     platform: linux/amd64
@@ -93,7 +104,13 @@ services:
       AUTHENTICATION_TYPE: apikey
       AUTHENTICATION_API_KEY: figurex-evolution-key
       AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
-      DATABASE_ENABLED: "false"
+      DATABASE_ENABLED: "true"
+      DATABASE_CONNECTION_URI: "mongodb://root:root@mongodb:27017/evolution?authSource=admin"
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
       STORE_MESSAGES: "true"
       STORE_MESSAGE_UP: "true"
       STORE_CONTACTS: "true"
@@ -102,7 +119,10 @@ services:
       DEL_INSTANCE: "false"
     volumes:
       - figurex_evolution_instances:/evolution/instances
+    depends_on:
+      - mongodb
 
 volumes:
   figurex_mysql_data:
   figurex_evolution_instances:
+  figurex_mongodb_data:

@@ -13,6 +13,14 @@ import { useToast } from '../../hooks/useToast';
 import { formatDate } from '../../utils/format';
 import type { User } from '../../types';
 
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : '';
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 export default function ManageUsers() {
   const toast = useToast();
   const [users, setUsers] = useState<User[]>([]);
@@ -264,7 +272,7 @@ export default function ManageUsers() {
               className="input-field"
               placeholder="(11) 99999-9999"
               value={form.phone ?? ''}
-              onChange={(event) => setForm({ ...form, phone: event.target.value })}
+              onChange={(event) => setForm({ ...form, phone: maskPhone(event.target.value) })}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">

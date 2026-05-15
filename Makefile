@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up up-prod down build migrate fresh seed deploy send db thinker shell logs front-install front-build front-lint
+.PHONY: help install up up-prod down build migrate fresh seed deploy send db db-evolution thinker shell logs front-install front-build front-lint
 
 # Comandos executados dentro do container PHP (app).
 ARTISAN = docker compose exec app php artisan
@@ -68,6 +68,10 @@ send: ## Aplica o lint e cria um commit (pede a mensagem) e faz push
 
 db: ## Abre o cliente MySQL do banco da aplicação
 	docker compose exec mysql mysql -ufigurex -pfigurex figurex
+
+db-evolution: ## Cria o banco 'evolution' no MySQL (rodar uma vez após make up)
+	docker compose exec mysql mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS evolution CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON evolution.* TO 'figurex'@'%'; FLUSH PRIVILEGES;"
+	@echo "Banco 'evolution' criado e permissões concedidas."
 
 thinker: ## Abre o Laravel Tinker
 	$(ARTISAN) tinker

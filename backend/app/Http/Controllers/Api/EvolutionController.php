@@ -20,20 +20,28 @@ class EvolutionController extends Controller
         ];
     }
 
-    private function http(): \Illuminate\Http\Client\PendingRequest
+    private function http(int $timeout = 10): \Illuminate\Http\Client\PendingRequest
     {
-        return Http::withHeader('apikey', $this->config()['api_key'])->timeout(10);
+        return Http::withHeader('apikey', $this->config()['api_key'])->timeout($timeout);
     }
 
     private function formatPhone(string $phone): string
     {
-        $number = preg_replace('/\D/', '', $phone);
+        // Remove tudo que não é dígito: (, ), -, espaço, +, etc.
+        $digits = preg_replace('/\D/', '', $phone);
 
-        if (strlen($number) <= 11) {
-            $number = '55' . $number;
+        // Remove zero à esquerda (ex: "011 99999-9999" → "11999999999")
+        if (str_starts_with($digits, '0')) {
+            $digits = ltrim($digits, '0');
         }
 
-        return $number;
+        // Se já contém DDI (começa com 55 e tem 12-13 dígitos), mantém como está.
+        // Caso contrário (10 ou 11 dígitos = DDD + número), adiciona DDI do Brasil.
+        if (strlen($digits) <= 11) {
+            $digits = '55' . $digits;
+        }
+
+        return $digits;
     }
 
     public function connectionStatus(): JsonResponse
@@ -91,6 +99,33 @@ class EvolutionController extends Controller
         ]);
     }
 
+    public function sendTestMessage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'number'  => ['required', 'string', 'max:20'],
+            'message' => ['required', 'string', 'max:4096'],
+        ]);
+
+        $config = $this->config();
+
+        try {
+            $response = $this->http(30)->post("{$config['url']}/message/sendText/{$config['instance']}", [
+                'number'      => $this->formatPhone($request->string('number')->value()),
+                'textMessage' => ['text' => $request->string('message')->value()],
+            ]);
+        } catch (ConnectionException) {
+            abort(502, 'Não foi possível conectar à Evolution API. Verifique se o WhatsApp está conectado.');
+        }
+
+        abort_unless(
+            $response->successful(),
+            502,
+            'Falha ao enviar mensagem. Verifique se o WhatsApp está conectado e o número é válido.'
+        );
+
+        return response()->json(['message' => 'Mensagem de teste enviada com sucesso.']);
+    }
+
     public function sendMessage(Request $request, User $user): JsonResponse
     {
         $request->validate([
@@ -102,9 +137,9 @@ class EvolutionController extends Controller
         $config = $this->config();
 
         try {
-            $response = $this->http()->post("{$config['url']}/message/sendText/{$config['instance']}", [
-                'number' => $this->formatPhone($user->phone),
-                'text' => $request->string('message')->value(),
+            $response = $this->http(30)->post("{$config['url']}/message/sendText/{$config['instance']}", [
+                'number'      => $this->formatPhone($user->phone),
+                'textMessage' => ['text' => $request->string('message')->value()],
             ]);
         } catch (ConnectionException) {
             abort(502, 'Não foi possível conectar à Evolution API. Verifique se o WhatsApp está conectado.');
@@ -124,23 +159,39 @@ class EvolutionController extends Controller
         abort_if(! $user->phone, 422, 'Este colecionador não possui telefone cadastrado.');
 
         $config = $this->config();
+        $remoteJid = $this->formatPhone($user->phone) . '@s.whatsapp.net';
 
         try {
             $response = $this->http()->post("{$config['url']}/chat/findMessages/{$config['instance']}", [
                 'where' => [
-                    'key' => ['remoteJid' => $this->formatPhone($user->phone) . '@s.whatsapp.net'],
+                    'key' => ['remoteJid' => $remoteJid],
                 ],
                 'limit' => (int) $request->input('limit', 50),
             ]);
         } catch (ConnectionException) {
-            return response()->json(['messages' => []]);
+            abort(502, 'Não foi possível conectar à Evolution API. Verifique se o WhatsApp está conectado.');
         }
 
         if (! $response->successful()) {
-            return response()->json(['messages' => []]);
+            \Log::error('Evolution getMessages falhou', [
+                'remoteJid' => $remoteJid,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            abort(502, 'Falha ao buscar mensagens na Evolution API (HTTP ' . $response->status() . '). Verifique os logs.');
         }
 
-        $messages = $response->json('messages.records') ?? $response->json('messages') ?? [];
+        $body = $response->json();
+
+        // Evolution com MongoDB retorna array direto na raiz.
+        // Evolution com store em arquivo retorna { messages: { records: [...] } } ou { messages: [...] }.
+        $messages = match (true) {
+            is_array($body) && array_is_list($body)      => $body,
+            isset($body['messages']['records'])           => $body['messages']['records'],
+            isset($body['messages']) && is_array($body['messages']) => $body['messages'],
+            default                                       => [],
+        };
 
         return response()->json(['messages' => $messages]);
     }
