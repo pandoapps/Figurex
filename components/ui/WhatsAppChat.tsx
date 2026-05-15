@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Send, MessageCircle, RefreshCw } from 'lucide-react';
+import { Send, MessageCircle, RefreshCw, X } from 'lucide-react';
 import GlassModal from './GlassModal';
 import Spinner from './Spinner';
 import { evolutionService, type WhatsAppMessage } from '../../services/evolutionService';
@@ -77,8 +77,8 @@ export default function WhatsAppChat({ user, onClose }: Props) {
   };
 
   return (
-    <GlassModal isOpen={Boolean(user)} onClose={onClose}>
-      <div className="flex flex-col w-full" style={{ width: '520px', height: '600px', maxWidth: '95vw' }}>
+    <GlassModal isOpen={Boolean(user)} onClose={onClose} maxWidthClass="max-w-xl w-full" hideCloseButton>
+      <div className="flex flex-col w-full" style={{ height: '600px' }}>
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-3">
@@ -90,15 +90,25 @@ export default function WhatsAppChat({ user, onClose }: Props) {
               <div className="text-xs text-[#b0bec5]">{user?.phone ?? 'Sem telefone'}</div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={loadMessages}
-            disabled={loading}
-            className="p-2 glass hover:text-[#f5c518] transition-colors"
-            aria-label="Atualizar"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={loadMessages}
+              disabled={loading}
+              className="p-2 glass hover:text-[#f5c518] transition-colors"
+              aria-label="Atualizar"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 glass hover:text-red-400 transition-colors"
+              aria-label="Fechar"
+            >
+              <X size={14} />
+            </button>
+          </div>
         </div>
 
         {/* Mensagens */}

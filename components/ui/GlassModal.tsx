@@ -8,6 +8,7 @@ interface GlassModalProps {
   onClose: () => void;
   children: ReactNode;
   maxWidthClass?: string;
+  hideCloseButton?: boolean;
 }
 
 /**
@@ -18,6 +19,7 @@ export default function GlassModal({
   onClose,
   children,
   maxWidthClass = 'max-w-xl',
+  hideCloseButton = false,
 }: GlassModalProps) {
   useModalClose(isOpen, onClose);
 
@@ -38,14 +40,16 @@ export default function GlassModal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className={`glass w-full ${maxWidthClass} relative z-10 max-h-[90vh] overflow-y-auto`}
           >
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Fechar"
-              className="absolute top-4 right-4 w-10 h-10 glass rounded-full flex items-center justify-center hover:bg-white/20 transition-all z-20"
-            >
-              <X size={18} />
-            </button>
+            {!hideCloseButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Fechar"
+                className="absolute top-4 right-4 w-10 h-10 glass rounded-full flex items-center justify-center hover:bg-white/20 transition-all z-20"
+              >
+                <X size={18} />
+              </button>
+            )}
             {children}
           </motion.div>
         </div>
