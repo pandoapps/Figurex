@@ -64,7 +64,7 @@ send: ## Aplica o lint e cria um commit (pede a mensagem) e faz push
 	@read -p "Mensagem do commit: " msg; \
 	git add -A; \
 	git commit -m "$$msg"; \
-	git push
+	git push --set-upstream origin $$(git rev-parse --abbrev-ref HEAD)
 
 db: ## Abre o cliente MySQL do banco da aplicação
 	docker compose exec mysql mysql -ufigurex -pfigurex figurex

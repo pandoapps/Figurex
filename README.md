@@ -8,6 +8,7 @@ logística de envio (FreteNet).
 
 - **Backend:** Laravel 11 + PHP 8.4 + MySQL 8 + Sanctum (API REST JSON)
 - **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS 4 + React Router
+- **Mensageria:** Evolution API v1.8.7 + MongoDB 6 (histórico de WhatsApp)
 - **Infra:** Docker + Docker Compose + Nginx
 
 ## Perfis de acesso
@@ -24,20 +25,24 @@ Pré-requisitos: Docker, Docker Compose e Node 20+.
 
 ```bash
 make install
+make db-evolution   # cria o banco auxiliar da Evolution no MySQL
 ```
 
-Esse comando copia os `.env`, sobe os containers, instala dependências,
+`make install` copia os `.env`, sobe os containers, instala dependências,
 gera a `APP_KEY`, roda as migrations com seeders e instala o frontend.
+`make db-evolution` só precisa ser rodado uma vez por ambiente.
 
 Em seguida, suba o ambiente:
 
 ```bash
 make up
-npm run dev   # servidor Vite do frontend
 ```
 
 - Frontend: http://localhost:3000
 - API: http://localhost:8000/api
+- Evolution API: http://localhost:8080
+
+Para conectar o WhatsApp, acesse `/admin/whatsapp` e escaneie o QR code.
 
 ## Usuários de demonstração
 
@@ -55,7 +60,8 @@ automaticamente com esses usuários.
 ## Comandos úteis
 
 Veja todos com `make help`. Principais: `make up`, `make down`, `make fresh`,
-`make migrate`, `make seed`, `make db`, `make shell`, `make send`, `make deploy`.
+`make migrate`, `make seed`, `make db`, `make db-evolution`, `make shell`,
+`make send`, `make deploy`.
 
 ## Estrutura
 

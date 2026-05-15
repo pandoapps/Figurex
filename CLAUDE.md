@@ -31,6 +31,12 @@ commitar/publicar é exclusivo do desenvolvedor.
 - Tailwind CSS 4
 - React Router
 
+**Mensageria WhatsApp**
+- Evolution API v1.8.7 (container `figurex_evolution`, porta 8080)
+- MongoDB 6 (container `figurex_mongodb`) — banco de mensagens da Evolution
+- Integração via `EvolutionController` + `evolutionService.ts`
+- Funcionalidades: histórico de conversa por usuário, envio de mensagem, envio de teste
+
 **Infraestrutura**
 - Docker + Docker Compose
 - Nginx como proxy reverso
@@ -59,20 +65,26 @@ commitar/publicar é exclusivo do desenvolvedor.
 
 Nunca use `php artisan` diretamente — sempre passe pelo Makefile.
 
-| Comando            | Descrição                                                      |
-|--------------------|----------------------------------------------------------------|
-| `make install`     | Instala tudo e prepara o ambiente do zero                      |
-| `make up`          | Sobe o ambiente de desenvolvimento                            |
-| `make up-prod`     | Sobe o ambiente de produção                                    |
-| `make down`        | Derruba os containers                                          |
-| `make migrate`     | Roda as migrations                                             |
-| `make fresh`       | Recria o banco e roda os seeders                               |
-| `make seed`        | Roda apenas os seeders                                         |
-| `make deploy`      | Pull + build + deploy em produção (migrations com `--force`)   |
-| `make send`        | Aplica o lint, pede a mensagem e cria o commit + push          |
-| `make db`          | Abre o cliente MySQL                                           |
-| `make thinker`     | Abre o Laravel Tinker                                          |
-| `make shell`       | Abre um shell no container PHP                                 |
+| Comando               | Descrição                                                      |
+|-----------------------|----------------------------------------------------------------|
+| `make install`        | Instala tudo e prepara o ambiente do zero                      |
+| `make up`             | Sobe o ambiente de desenvolvimento                             |
+| `make up-prod`        | Sobe o ambiente de produção                                    |
+| `make down`           | Derruba os containers                                          |
+| `make migrate`        | Roda as migrations                                             |
+| `make fresh`          | Recria o banco e roda os seeders                               |
+| `make seed`           | Roda apenas os seeders                                         |
+| `make deploy`         | Pull + build + deploy em produção (migrations com `--force`)   |
+| `make send`           | Aplica o lint, pede a mensagem e cria o commit + push          |
+| `make db`             | Abre o cliente MySQL (banco `figurex`)                         |
+| `make db-evolution`   | Cria o banco `evolution` no MySQL — rodar uma vez após install |
+| `make thinker`        | Abre o Laravel Tinker                                          |
+| `make shell`          | Abre um shell no container PHP                                 |
+
+> **Nota sobre o WhatsApp:** após `make install` em um ambiente novo, rode `make db-evolution`
+> para criar o banco auxiliar do MySQL (usado como fallback). O banco principal da Evolution
+> é o MongoDB (`figurex_mongodb`). Após o primeiro `make up`, escaneie o QR code em
+> `/admin/whatsapp` para conectar a instância.
 
 ## Convenções de código
 
