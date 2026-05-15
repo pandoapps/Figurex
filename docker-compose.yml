@@ -1,0 +1,108 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: figurex_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: figurex
+      MYSQL_USER: figurex
+      MYSQL_PASSWORD: figurex
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - figurex_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pfigurex"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: figurex_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    environment:
+      EVOLUTION_URL: http://evolution:8080
+      EVOLUTION_API_KEY: figurex-evolution-key
+      EVOLUTION_INSTANCE: figurex
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: figurex_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www/html
+      - ./docker/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: figurex_scheduler
+    restart: unless-stopped
+    working_dir: /var/www/html
+    environment:
+      EVOLUTION_URL: http://evolution:8080
+      EVOLUTION_API_KEY: figurex-evolution-key
+      EVOLUTION_INSTANCE: figurex
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: php artisan schedule:work
+
+  node:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+    container_name: figurex_node
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
+
+  evolution:
+    image: atendai/evolution-api:v1.8.7
+    platform: linux/amd64
+    container_name: figurex_evolution
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_URL: http://localhost:8080
+      AUTHENTICATION_TYPE: apikey
+      AUTHENTICATION_API_KEY: figurex-evolution-key
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
+      DATABASE_ENABLED: "false"
+      STORE_MESSAGES: "true"
+      STORE_MESSAGE_UP: "true"
+      STORE_CONTACTS: "true"
+      STORE_CHATS: "true"
+      QRCODE_LIMIT: "30"
+      DEL_INSTANCE: "false"
+    volumes:
+      - figurex_evolution_instances:/evolution/instances
+
+volumes:
+  figurex_mysql_data:
+  figurex_evolution_instances:
