@@ -5,12 +5,14 @@ namespace Database\Seeders;
 use App\Models\StickerDefinition;
 use App\Models\Team;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class StickerDefinitionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Cada jogador recebe uma das 6 fotos de storage/app/public/stickers.
+        // As fotos ficam versionadas em database/seeders/images/stickers e são
+        // publicadas em storage/app/public/stickers (pasta ignorada pelo git).
         $definitions = [
             ['team' => 'Brasil', 'player_name' => 'Neymar Jr', 'rarity' => 'Lendário', 'image_path' => 'stickers/sticker-1.webp'],
             ['team' => 'Brasil', 'player_name' => 'Vinícius Jr', 'rarity' => 'Raro', 'image_path' => 'stickers/sticker-2.jpg'],
@@ -30,10 +32,26 @@ class StickerDefinitionSeeder extends Seeder
             StickerDefinition::updateOrCreate(
                 ['team_id' => $team->id, 'player_name' => $definition['player_name']],
                 [
-                    'image_path' => $definition['image_path'],
+                    'image_path' => $this->publishImage($definition['image_path']),
                     'rarity' => $definition['rarity'],
                 ],
             );
         }
+    }
+
+    /**
+     * Copia a foto versionada para o disco público e devolve o caminho salvo.
+     * Sem arquivo de origem, devolve null para o frontend exibir o emoji padrão.
+     */
+    private function publishImage(string $path): ?string
+    {
+        $disk = Storage::disk('public');
+        $source = database_path('seeders/images/'.$path);
+
+        if (is_file($source)) {
+            $disk->put($path, file_get_contents($source));
+        }
+
+        return $disk->exists($path) ? $path : null;
     }
 }

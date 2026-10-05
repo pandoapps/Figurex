@@ -74,6 +74,7 @@ Nunca use `php artisan` diretamente — sempre passe pelo Makefile.
 | `make migrate`        | Roda as migrations                                             |
 | `make fresh`          | Recria o banco e roda os seeders                               |
 | `make seed`           | Roda apenas os seeders                                         |
+| `make storage-link`   | Cria o link `public/storage` (necessário para exibir imagens)  |
 | `make deploy`         | Pull + build + deploy em produção (migrations com `--force`)   |
 | `make send`           | Aplica o lint, pede a mensagem e cria o commit + push          |
 | `make db`             | Abre o cliente MySQL (banco `figurex`)                         |

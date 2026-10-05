@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up up-prod down build migrate fresh seed deploy send db db-evolution thinker shell logs front-install front-build front-lint
+.PHONY: help install up up-prod down build migrate fresh seed storage-link deploy send db db-evolution thinker shell logs front-install front-build front-lint
 
 # Comandos executados dentro do container PHP (app).
 ARTISAN = docker compose exec app php artisan
@@ -15,6 +15,7 @@ install: ## Instala dependências (backend + frontend) e prepara o ambiente
 	docker compose up -d
 	$(COMPOSER) install
 	$(ARTISAN) key:generate
+	$(ARTISAN) storage:link --force
 	$(ARTISAN) migrate --seed
 	npm install
 
@@ -39,6 +40,9 @@ fresh: ## Recria o banco e roda os seeders
 seed: ## Roda apenas os seeders
 	$(ARTISAN) db:seed
 
+storage-link: ## Cria o link public/storage (necessário para exibir as imagens)
+	$(ARTISAN) storage:link --force
+
 front-install: ## Instala as dependências do frontend
 	npm install
 
@@ -54,6 +58,7 @@ deploy: ## Atualiza o código e publica em produção (pull + build + migrate --
 	npm install
 	npm run build
 	docker compose -f docker-compose.prod.yml up -d --build
+	docker compose -f docker-compose.prod.yml exec app php artisan storage:link --force
 	docker compose -f docker-compose.prod.yml exec app php artisan migrate --force
 	docker compose -f docker-compose.prod.yml exec app php artisan config:cache
 	docker compose -f docker-compose.prod.yml exec app php artisan route:cache

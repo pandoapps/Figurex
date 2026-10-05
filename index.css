@@ -10,13 +10,13 @@
 }
 
 body {
-  @apply bg-[#0a1628] text-white min-h-screen font-sans;
-  background-color: #0a1628;
+  @apply bg-[#c2410c] text-white min-h-screen font-sans;
+  background-color: #c2410c;
   background-image:
-    radial-gradient(circle at center, rgba(26, 58, 92, 0.4) 0%, transparent 70%),
+    radial-gradient(circle at center, rgba(251, 146, 60, 0.4) 0%, transparent 70%),
     linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, #0a1628 0%, #1a3a5c 100%);
+    linear-gradient(90deg, #c2410c 0%, #ea580c 100%);
   background-size: 100% 100%, 100px 100px, 100px 100px, 100% 100%;
   background-attachment: fixed;
   position: relative;
