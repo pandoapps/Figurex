@@ -69,8 +69,10 @@ Nunca use `php artisan` diretamente — sempre passe pelo Makefile.
 |-----------------------|----------------------------------------------------------------|
 | `make install`        | Instala tudo e prepara o ambiente do zero                      |
 | `make up`             | Sobe o ambiente de desenvolvimento                             |
+| `make install-prod`   | Prepara o ambiente de produção do zero (uma vez no servidor)   |
 | `make up-prod`        | Sobe o ambiente de produção                                    |
 | `make down`           | Derruba os containers                                          |
+| `make down-prod`      | Derruba os containers de produção                              |
 | `make migrate`        | Roda as migrations                                             |
 | `make fresh`          | Recria o banco e roda os seeders                               |
 | `make seed`           | Roda apenas os seeders                                         |
